@@ -1,0 +1,599 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Проект ЛВС MikroTik 3D — ТОО Северный Технопарк</title>
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#07111d;--panel:#0d1d2d;--panel2:#11283b;--stroke:#274c63;--text:#eaf6ff;--muted:#8eabbe;
+  --cyan:#59deef;--blue:#7fb6ff;--violet:#c0a2ff;--green:#82e2b5;--orange:#ffbd77;--red:#ff8f8f;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:Inter,Segoe UI,Arial,sans-serif}
+button,input{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.app{display:grid;grid-template-rows:72px minmax(0,1fr);height:100dvh;min-height:700px;background:radial-gradient(ellipse at 35% 35%,#14334e 0%,#0b1e31 40%,#081422 78%,#06111c 100%)}
+header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 24px;border-bottom:1px solid #234156;background:#081523ee;backdrop-filter:blur(10px)}
+.brand{display:flex;align-items:center;gap:13px;min-width:0}.logo{width:42px;height:42px;border-radius:12px;border:1px solid #3b7993;background:linear-gradient(145deg,#15354a,#0a1f30);display:grid;place-items:center;color:#74e3ee}.logo svg{width:27px;height:27px}.brand-title{font-size:16px;font-weight:850;letter-spacing:.02em}.brand-title b{color:var(--cyan)}.brand-sub{font-size:10px;color:#85a2b6;letter-spacing:.16em;font-weight:760;margin-top:4px}
+.head-right{display:flex;align-items:center;gap:14px;color:#a7c2d1;font-size:11px}.pill{border:1px solid #335f75;padding:8px 10px;border-radius:999px;white-space:nowrap}.pill::before{content:'';display:inline-block;width:7px;height:7px;background:#67e5a2;border-radius:50%;margin-right:8px;vertical-align:middle}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 395px;min-height:0}
+.scene{position:relative;overflow:hidden;min-height:0;background:radial-gradient(ellipse at 44% 44%,#163755 0%,#0b2033 43%,#081523 80%,#07111d 100%)}
+.scene::before{content:'';position:absolute;inset:0;opacity:.2;background-image:linear-gradient(#23435a 1px,transparent 1px),linear-gradient(90deg,#23435a 1px,transparent 1px);background-size:46px 46px;transform:perspective(580px) rotateX(62deg) scale(1.8) translateY(160px);mask-image:linear-gradient(to bottom,transparent 10%,#000 100%);pointer-events:none}
+#cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.scene-top{position:absolute;left:26px;top:22px;z-index:2;pointer-events:none}.eyebrow{font-size:10px;color:var(--cyan);font-weight:800;letter-spacing:.22em}.scene-top h1{font-size:28px;line-height:1.16;margin:8px 0 8px;letter-spacing:-.04em}.scene-top p{font-size:12px;line-height:1.58;color:var(--muted);margin:0;max-width:510px}.stamp{position:absolute;right:24px;top:24px;z-index:2;pointer-events:none;border:1px solid #315f77;border-radius:9px;padding:10px 12px;background:#092234c6;color:#b2cddd;font-size:10px;font-weight:760;letter-spacing:.12em}
+.legend{position:absolute;left:28px;top:226px;display:grid;gap:8px;z-index:2;pointer-events:none}.legend span{display:flex;align-items:center;gap:8px;font-size:11px;color:#bdd1de}.legend i{width:22px;height:4px;border-radius:4px;display:inline-block}
+.scene-bottom{position:absolute;left:20px;right:20px;bottom:18px;display:flex;align-items:end;justify-content:space-between;gap:12px;z-index:2;pointer-events:none}.hint{font-size:11px;line-height:1.7;color:#a3c0d2;background:#091a2ad6;border:1px solid #285066;padding:10px 12px;border-radius:10px;max-width:340px;backdrop-filter:blur(8px)}.hint strong{color:#eef8ff}.controls{display:flex;gap:7px;pointer-events:auto}.controls button{height:39px;min-width:39px;border:1px solid #315f75;border-radius:9px;background:#102c3fef;color:#e2f6ff;font-weight:800;padding:0 12px}.controls button:hover{background:#173d54;border-color:#58dded}
+.sidebar{overflow:auto;min-height:0;background:linear-gradient(180deg,#0d1c2b 0%,#0a1725 100%);border-left:1px solid #27475e;padding:22px 18px 28px;scrollbar-width:thin;scrollbar-color:#31556b transparent}
+.toprow{display:flex;align-items:center;justify-content:space-between}.section-kicker{font-size:10px;color:#65d0e0;font-weight:830;letter-spacing:.18em}.topbadge{font-size:10px;color:#acc8d8;border:1px solid #32586e;border-radius:7px;padding:5px 8px}
+h2{font-size:18px;margin:9px 0 7px}.muted{font-size:12px;line-height:1.58;color:var(--muted)}
+.section{margin-top:20px;padding-top:18px;border-top:1px solid #234156}.section-title{font-size:11px;letter-spacing:.18em;font-weight:820;color:#cfe1eb;margin:0 0 12px}
+.floor-menu{display:grid;gap:8px;margin-top:14px}.fbtn{display:flex;align-items:center;gap:11px;width:100%;text-align:left;border:1px solid #294a5e;background:#102739;color:#f1fbff;padding:11px;border-radius:11px;transition:.15s}.fbtn:hover{background:#18374b;border-color:#5991aa}.fbtn.active{background:linear-gradient(100deg,#0f4053,#163145);border-color:#67dbea;box-shadow:inset 3px 0 0 #67e1ef}.fnum{width:35px;height:35px;display:grid;place-items:center;border-radius:9px;border:1px solid #39697d;background:#13374b;color:#95edf6;font-size:12px;font-weight:850}.ftext strong{display:block;font-size:12px}.ftext small{display:block;font-size:10px;color:#8fb0c0;margin-top:4px}
+.detail{border:1px solid #305a72;border-radius:14px;background:linear-gradient(145deg,#123147,#0f2335);padding:15px;min-height:180px}.detail h3{font-size:16px;margin:0 0 4px}.code{font-size:11px;color:#72d9eb;letter-spacing:.1em;font-weight:760}.detail p{font-size:12px;color:#aac3d1;line-height:1.64;margin:12px 0}.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;padding-top:14px;border-top:1px solid #2b5269}.detail-grid small{display:block;font-size:10px;color:#84a5ba;margin-bottom:5px}.detail-grid b{display:block;font-size:11px;line-height:1.45;color:#e7f7ff}.tag{display:inline-block;font-size:10px;border:1px solid #2f627a;border-radius:7px;padding:5px 7px;background:#143448;color:#b4edf7;margin:4px 6px 0 0}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.metric{border:1px solid #294559;border-radius:10px;background:#0d2335;padding:10px 6px;text-align:center}.metric strong{display:block;font-size:20px}.metric small{display:block;font-size:9px;color:#8bafc2;margin-top:4px}
+.toggles{display:grid;gap:12px}.trow{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12px;color:#b6cfde}.trow input{width:17px;height:17px;accent-color:#4bd4e4}
+.note{font-size:11px;line-height:1.65;color:#8aa8bb;padding:12px;border-left:2px solid #447f98;background:#0d2434;border-radius:0 8px 8px 0}
+.vlans{display:grid;gap:9px}.vl{display:flex;align-items:center;gap:8px;font-size:11px}.vl i{width:8px;height:8px;border-radius:50%;display:inline-block}.vl strong{min-width:72px;color:#d9eff9}
+.tblwrap{overflow:auto;border:1px solid #27465b;border-radius:10px;background:#0c1f30}.tbl{width:100%;border-collapse:collapse;font-size:11px}.tbl th,.tbl td{padding:8px 8px;border-bottom:1px solid #1e3749;vertical-align:top}.tbl th{position:sticky;top:0;background:#12283a;color:#d8edf8;text-align:left;font-size:10px;letter-spacing:.08em}.tbl td{color:#b8d1de}.tbl tr:last-child td{border-bottom:0}.right{text-align:right;white-space:nowrap}.sumgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.sumcard{border:1px solid #2c4e63;background:#0f2739;border-radius:11px;padding:10px;text-align:center}.sumcard strong{display:block;font-size:18px}.sumcard small{display:block;font-size:10px;color:#8fb0c2;margin-top:5px}
+.foot{font-size:10px;color:#7c9eb2;line-height:1.6;margin-top:12px}
+@media(max-width:1050px){.layout{grid-template-columns:minmax(0,1fr) 340px}.sidebar{padding:18px 14px}.scene-top h1{font-size:24px}}
+@media(max-width:760px){.app{height:auto;min-height:100dvh;grid-template-rows:64px 1fr}header{padding:0 13px}.head-right{display:none}.brand-title{font-size:14px}.brand-sub{font-size:8px}.logo{width:36px;height:36px}.layout{display:flex;flex-direction:column}.scene{height:58vh;min-height:420px}.scene-top{left:14px;top:15px}.scene-top h1{font-size:21px}.scene-top p{font-size:10px;max-width:260px}.stamp{display:none}.legend{left:16px;top:205px}.legend span{font-size:9px}.scene-bottom{left:10px;right:10px;bottom:10px}.hint{font-size:9px;padding:7px 8px;max-width:230px}.controls button{height:35px;min-width:35px;padding:0 8px}.sidebar{border-left:0;border-top:1px solid #27475e}.metrics,.sumgrid{grid-template-columns:repeat(3,1fr)} }
+@media(max-width:430px){.hint{display:none}.scene-bottom{justify-content:flex-end}.scene-top h1{font-size:18px}.floor-menu{grid-template-columns:repeat(2,1fr)}}
+
+/* Интерактивная анимация прохождения сетевого трафика */
+.signal-card{border:1px solid #477f95;border-radius:14px;background:linear-gradient(145deg,#123747,#0e2537 65%,#102338);padding:14px;box-shadow:0 5px 32px #00131b29}
+.signal-head{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:9px}.signal-head strong{font-size:13px;color:#dff8ff}.signal-head span{font-size:9px;color:#8df4d6;letter-spacing:.08em;background:#103c48;padding:5px 7px;border:1px solid #2e797f;border-radius:6px}
+.signal-card select{width:100%;padding:10px 30px 10px 10px;min-height:38px;color:#e7f7ff;background:#10283a;border:1px solid #3d6a7f;border-radius:8px;font:600 12px Segoe UI,Arial,sans-serif;outline-color:#69e4f5}
+.signal-actions{display:flex;gap:7px;margin:11px 0}.signal-actions button{border:1px solid #3e6b80;background:#132f42;color:#e4f9ff;border-radius:8px;padding:9px 12px;font-weight:750;font-size:11px;flex:1}.signal-actions button.primary{background:linear-gradient(110deg,#197b8f,#1b526b);border-color:#61d5e8;color:white}.signal-actions button:hover{filter:brightness(1.18)}
+.signal-line{height:5px;border-radius:6px;background:#203b4d;overflow:hidden;margin:10px 0 8px}.signal-line>div{height:100%;width:0%;border-radius:6px;background:linear-gradient(90deg,#35b7d6,#7ff0d7);box-shadow:0 0 12px #58e5e5;transition:width .08s linear}
+.signal-status{font-size:11px;line-height:1.55;color:#b2d2e1;min-height:30px}.signal-status b{color:#fff}.signal-path{font-size:11px;line-height:1.7;color:#9abfd0;padding:9px;background:#0b2031;border:1px solid #254a5f;border-radius:8px;max-height:158px;overflow:auto}.signal-path span.active{color:#fff;background:#1b5871;border-radius:4px;padding:2px 3px}.signal-path span{transition:background .15s}
+.signal-speed{display:flex;align-items:center;gap:10px;font-size:11px;color:#9ebccc}.signal-speed label{white-space:nowrap}.signal-speed input{width:100%;min-width:45px;accent-color:#63ddea}
+.scene-signal{position:absolute;z-index:2;right:24px;top:72px;width:250px;pointer-events:none;background:#071d2fda;border:1px solid #376b83;padding:11px 13px;border-radius:10px;backdrop-filter:blur(8px)}.scene-signal small{font-size:9px;font-weight:800;letter-spacing:.16em;color:#6ce2f2}.scene-signal div{font-size:12px;font-weight:800;line-height:1.4;color:#edfbff;margin-top:5px}.scene-signal p{font-size:10px;color:#a7c9d9;margin:5px 0 0}
+@media(max-width:760px){.scene-signal{right:11px;top:68px;width:195px;padding:7px 9px}.scene-signal div{font-size:10px}.scene-signal p{font-size:9px}}
+@media(max-width:430px){.scene-signal{display:none}}
+
+/* Пояснение маршрута и назначение оборудования */
+.signal-explanation{font-size:11px;line-height:1.6;color:#aecbdb;background:#0c2639;border:1px solid #2d5067;border-radius:9px;padding:11px 12px;margin-top:9px}
+.signal-explanation strong{color:#e9faff}
+.signal-explanation ol{margin:8px 0 2px 0;padding-left:19px}
+.signal-explanation li{margin:0 0 6px 0;padding-left:2px}
+.signal-explanation li.active{color:#fff;background:#174457;border-radius:6px;padding:4px 6px;margin-left:-6px}
+.signal-explanation small{display:block;color:#89b2c7;margin-top:9px}
+.equipment-guide{display:grid;gap:8px}
+.equip-info{width:100%;display:flex;gap:10px;align-items:flex-start;border:1px solid #2a4b5d;background:#102638;color:#cce4ef;text-align:left;border-radius:9px;padding:10px;transition:background .15s,border-color .15s}
+.equip-info:hover,.equip-info:focus-visible{background:#143a4d;border-color:#58cbdf}
+.equip-info.active{border-color:#6de4ef;background:#154052}
+.equip-symbol{display:grid;place-items:center;width:32px;height:32px;border:1px solid #39758b;border-radius:8px;color:#82e8f3;flex:none;background:#183b4d;font-size:16px}
+.equip-text strong{display:block;font-size:11px;color:#eaf9ff;margin-bottom:4px}
+.equip-text small{display:block;color:#9bbacb;font-size:10px;line-height:1.5}
+
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <div class="brand">
+    <div class="logo">
+      <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v7m0 0-7 4m7-4 7 4M7 14v8m14-8v8M7 22l7-4 7 4"/><circle cx="14" cy="3" r="2" fill="#74e3ee"/><circle cx="7" cy="14" r="2" fill="#74e3ee"/><circle cx="21" cy="14" r="2" fill="#74e3ee"/><circle cx="7" cy="22" r="2" fill="#74e3ee"/><circle cx="21" cy="22" r="2" fill="#74e3ee"/></svg>
+    </div>
+    <div>
+      <div class="brand-title">ПРОЕКТ ЛВС <b>MIKROTIK 3D</b></div>
+      <div class="brand-sub">ТОО СЕВЕРНЫЙ ТЕХНОПАРК · 3 ЭТАЖА · СКС / ВОЛС / СЕРВЕРНАЯ</div>
+    </div>
+  </div>
+  <div class="head-right"><span class="pill">ПРОЕКТНАЯ ВИЗУАЛИЗАЦИЯ</span><span>РОЛЬ: ПРОЕКТИРОВЩИК СЕТЕЙ · 2026</span></div>
+</header>
+<div class="layout">
+  <main class="scene" id="scene">
+    <canvas id="cv" aria-label="Интерактивная 3D модель сети"></canvas>
+    <div class="scene-top">
+      <div class="eyebrow">◆ DETAILED NETWORK DESIGN</div>
+      <h1>ТОО «Северный Технопарк»</h1>
+      <p>Проект локальной вычислительной сети для трёхэтажного административного здания. Основа решения: MikroTik, магистраль ВОЛС между этажами, серверная на 1 этаже, структурированная кабельная система Cat.6, телефония и IP-видеонаблюдение.</p>
+    </div>
+    <div class="stamp">● 3D ПРОЕКТ / ИСПОЛНИТЕЛЬНАЯ КОНЦЕПЦИЯ</div>
+    <div class="legend">
+      <span><i style="background:#c1a2ff;box-shadow:0 0 8px #c1a2ff"></i> Магистраль ВОЛС 10G</span>
+      <span><i style="background:#58dfd0;box-shadow:0 0 8px #58dfd0"></i> Горизонтальная СКС Cat.6</span>
+      <span><i style="background:#ffbd77;box-shadow:0 0 8px #ffbd77"></i> VoIP / CCTV / периферия</span>
+    </div>
+    <div class="scene-signal" id="sceneSignal"><small>● ЖИВОЙ ПОТОК ДАННЫХ</small><div id="sceneSignalTitle">ПК 3 этажа → сервер 1 этажа</div><p id="sceneSignalStage">Передача данных по магистрали</p></div>
+    <div class="scene-bottom">
+      <div class="hint"><strong>Управление</strong><br>Мышь — вращение · Колесо — масштаб · Клик — выбор оборудования<br>Кнопки справа — смена вида и уровней отображения.</div>
+      <div class="controls">
+        <button id="leftBtn" title="Повернуть влево">↶</button>
+        <button id="rightBtn" title="Повернуть вправо">↷</button>
+        <button id="zinBtn" title="Увеличить">+</button>
+        <button id="zoutBtn" title="Уменьшить">−</button>
+        <button id="resetBtn" title="Сбросить">СБРОС</button>
+      </div>
+    </div>
+  </main>
+  <aside class="sidebar">
+    <div class="toprow"><div class="section-kicker">PROJECT OVERVIEW</div><div class="topbadge">3 ЭТАЖА</div></div>
+    <h2>Состав объекта</h2>
+    <div class="muted">Организация: <b>ТОО «Северный Технопарк»</b>. Профиль — сопровождение IT‑инфраструктуры, разработка программного обеспечения и цифровые сервисы. В здании предусмотрено около 96 рабочих портов СКС, 6 точек Wi‑Fi, 12 VoIP‑аппаратов, 9 камер и серверная стойка 42U.</div>
+
+
+    <div class="section">
+      <div class="section-title">ДВИЖЕНИЕ СЕТЕВЫХ СИГНАЛОВ</div>
+      <div class="signal-card">
+        <div class="signal-head"><strong>Маршрут прохождения пакета</strong><span id="signalBadge">● ПЕРЕДАЧА</span></div>
+        <select id="signalScenario" aria-label="Выберите маршрут передачи">
+          <option value="pc3srv">ПК 3-го этажа → сервер 1-го</option>
+          <option value="pc2isp">ПК 2-го этажа → Интернет</option>
+          <option value="wifi2isp">Wi-Fi 2-го этажа → Интернет</option>
+          <option value="cam3nvr">IP-камера 3-го этажа → NVR</option>
+          <option value="srvnas">Сервер → хранилище NAS</option>
+          <option value="pc2srv">ПК 2-го этажа → сервер</option>
+        </select>
+        <div class="signal-actions"><button class="primary" id="signalToggle">Ⅱ ПАУЗА</button><button id="signalRestart">↺ ПОВТОР</button><button id="signalAll">3 ЭТАЖА</button></div>
+        <div class="signal-speed"><label for="signalSpeed">Скорость: <b id="signalSpeedLabel">1×</b></label><input type="range" id="signalSpeed" min="0.5" max="3" step="0.5" value="1" aria-label="Скорость анимации"></div>
+        <div class="signal-line"><div id="signalProgress"></div></div>
+        <div class="signal-status" id="signalStatus">Загрузка маршрута...</div>
+        <div class="signal-path" id="signalPath" aria-label="Этапы прохождения пакета"></div>
+        <div class="signal-explanation" id="signalExplanation" aria-live="polite"></div>
+        <div class="foot" style="margin-top:9px">Голубые импульсы — запрос, оранжевые — ответ. Фиолетовая трасса — ВОЛС, бирюзовая — витая пара. Симуляция маршрута, не реальные пакеты MikroTik.</div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-title">ОТОБРАЖЕНИЕ ЭТАЖЕЙ</div>
+      <div class="floor-menu" id="floorMenu"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">ВЫБРАННЫЙ ЭЛЕМЕНТ</div>
+      <div class="detail" id="detail"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">ЗА ЧТО ОТВЕЧАЕТ ОБОРУДОВАНИЕ</div>
+      <div class="equipment-guide" id="equipmentGuide"></div>
+      <div class="foot">Нажмите на оборудование, чтобы выделить его в 3D и прочитать техническое описание.</div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">СВОДНЫЕ ПОКАЗАТЕЛИ</div>
+      <div class="metrics" id="metrics"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">СЛОИ ОТОБРАЖЕНИЯ</div>
+      <div class="toggles">
+        <label class="trow"><span>Показывать ВОЛС</span><input type="checkbox" id="showFiber" checked></label>
+        <label class="trow"><span>Показывать СКС</span><input type="checkbox" id="showCopper" checked></label>
+        <label class="trow"><span>Показывать стены</span><input type="checkbox" id="showWalls" checked></label>
+        <label class="trow"><span>Показывать подписи</span><input type="checkbox" id="showLabels" checked></label>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">АРХИТЕКТУРА И СТАНДАРТЫ</div>
+      <div class="note">Принята иерархическая архитектура: <b>Интернет → CCR2004 → ядро CRS326 → этажные коммутаторы CRS328 → рабочие места</b>. Проект сформирован по подходам <b>ISO/IEC 11801</b>, <b>TIA/EIA-568</b>, <b>TIA-569</b>, <b>TIA-606</b>: отдельная серверная, магистральный стояк ВОЛС, горизонтальная СКС Cat.6, маркировка портов, резерв по оптическим волокнам и документирование.</div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">VLAN И РАЗДЕЛЕНИЕ ДОСТУПА</div>
+      <div class="vlans">
+        <div class="vl"><i style="background:#69c5ff"></i><strong>VLAN 10</strong><span>Управление сетью</span></div>
+        <div class="vl"><i style="background:#7de1b7"></i><strong>VLAN 20</strong><span>Серверы</span></div>
+        <div class="vl"><i style="background:#ffd27d"></i><strong>VLAN 30</strong><span>Бухгалтерия</span></div>
+        <div class="vl"><i style="background:#9ab6ff"></i><strong>VLAN 40</strong><span>Сотрудники</span></div>
+        <div class="vl"><i style="background:#ffab91"></i><strong>VLAN 50</strong><span>VoIP</span></div>
+        <div class="vl"><i style="background:#c39cff"></i><strong>VLAN 60</strong><span>CCTV</span></div>
+        <div class="vl"><i style="background:#60e0d5"></i><strong>VLAN 70</strong><span>Wi‑Fi Corp</span></div>
+        <div class="vl"><i style="background:#c5d6e0"></i><strong>VLAN 80</strong><span>Guest Wi‑Fi</span></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">СМЕТА ПРОЕКТА</div>
+      <div class="sumgrid" id="summaryGrid"></div>
+      <div style="height:12px"></div>
+      <div class="tblwrap"><table class="tbl" id="equipTable"></table></div>
+      <div style="height:12px"></div>
+      <div class="tblwrap"><table class="tbl" id="laborTable"></table></div>
+      <div class="foot">Цены указаны ориентировочно в тенге на момент составления учебного проекта и служат для предварительной оценки бюджета. При реальной закупке рекомендуется актуализировать коммерческие предложения минимум у 2–3 поставщиков.</div>
+    </div>
+  </aside>
+</div>
+</div>
+<script>
+'use strict';
+const money=n=>new Intl.NumberFormat('ru-RU').format(n)+' ₸';
+const floors=[
+ {id:'all',title:'Все этажи',sub:'Общий вид здания'},
+ {id:'f1',title:'1 этаж',sub:'Серверная, бухгалтерия, ресепшен'},
+ {id:'f2',title:'2 этаж',sub:'Open-space, HR, отдел продаж'},
+ {id:'f3',title:'3 этаж',sub:'IT-отдел, директор, учебная зона'}
+];
+const building=[
+ {id:'f1',y:0,color:'#14354a',rooms:[
+   {name:'РЕСЕПШЕН',x1:-15,x2:-8,z1:-9,z2:-2},
+   {name:'БУХГАЛТЕРИЯ',x1:-8,x2:1,z1:-9,z2:-2},
+   {name:'СЕРВЕРНАЯ',x1:1,x2:7,z1:-9,z2:-2},
+   {name:'СЛУЖБА БЕЗОПАСНОСТИ',x1:7,x2:15,z1:-9,z2:-2},
+   {name:'ТЕХПОДДЕРЖКА',x1:-15,x2:-5,z1:-2,z2:8},
+   {name:'КОРИДОР',x1:-5,x2:5,z1:-2,z2:8},
+   {name:'ПЕРЕГОВОРНАЯ',x1:5,x2:15,z1:-2,z2:3},
+   {name:'СКЛАД / АРХИВ',x1:5,x2:15,z1:3,z2:8}
+ ],walls:[
+   [-15,-9,15,-9,1],[-15,8,15,8,1],[-15,-9,-15,8,1],[15,-9,15,8,1],
+   [-8,-9,-8,-2],[1,-9,1,-2],[7,-9,7,-2],[-15,-2,15,-2],[-5,-2,-5,8],[5,-2,5,8],[5,3,15,3]
+ ]},
+ {id:'f2',y:4.2,color:'#183d55',rooms:[
+   {name:'OPEN SPACE A',x1:-15,x2:-3,z1:-9,z2:1},
+   {name:'OPEN SPACE B',x1:-3,x2:10,z1:-9,z2:1},
+   {name:'ТЕЛЕКОМ ШКАФ TR-2',x1:10,x2:15,z1:-9,z2:-3},
+   {name:'HR',x1:10,x2:15,z1:-3,z2:1},
+   {name:'ОТДЕЛ ПРОДАЖ',x1:-15,x2:-3,z1:1,z2:8},
+   {name:'ПЕРЕГОВОРНАЯ',x1:-3,x2:5,z1:1,z2:8},
+   {name:'КОРИДОР',x1:5,x2:10,z1:1,z2:8},
+   {name:'АРХИВ',x1:10,x2:15,z1:1,z2:8}
+ ],walls:[
+   [-15,-9,15,-9,1],[-15,8,15,8,1],[-15,-9,-15,8,1],[15,-9,15,8,1],
+   [-3,-9,-3,8],[10,-9,10,8],[10,-3,15,-3],[-15,1,15,1],[5,1,5,8]
+ ]},
+ {id:'f3',y:8.4,color:'#214664',rooms:[
+   {name:'IT-ОТДЕЛ',x1:-15,x2:-4,z1:-9,z2:0},
+   {name:'УЧЕБНАЯ ЗОНА',x1:-4,x2:7,z1:-9,z2:0},
+   {name:'ТЕЛЕКОМ ШКАФ TR-3',x1:7,x2:15,z1:-9,z2:-4},
+   {name:'КАБИНЕТ ДИРЕКТОРА',x1:7,x2:15,z1:-4,z2:0},
+   {name:'OPEN SPACE DEV',x1:-15,x2:-2,z1:0,z2:8},
+   {name:'ПЕРЕГОВОРНАЯ',x1:-2,x2:7,z1:0,z2:8},
+   {name:'КОМНАТА ОТДЫХА',x1:7,x2:15,z1:0,z2:8}
+ ],walls:[
+   [-15,-9,15,-9,1],[-15,8,15,8,1],[-15,-9,-15,8,1],[15,-9,15,8,1],
+   [-4,-9,-4,0],[7,-9,7,8],[7,-4,15,-4],[-15,0,15,0],[-2,0,-2,8]
+ ]}
+];
+const shaft={x1:0.3,x2:1.6,z1:-1.2,z2:0.2};
+const devices=[
+ {id:'ISP',type:'cloud',floor:'f3',x:1,y:13.9,z:-5.5,name:'Канал провайдера',model:'Интернет / ISP',desc:'Точка подключения внешнего канала связи. На проектной схеме подаётся в маршрутизатор CCR2004.',port:'WAN',role:'Внешняя связь',tags:['Провайдер','Интернет']},
+ {id:'RTR1',type:'router',floor:'f1',x:2.4,y:0.5,z:-7.2,name:'Маршрутизатор',model:'MikroTik CCR2004-1G-12S+2XS',desc:'Пограничный маршрутизатор RouterOS: является шлюзом VLAN, проверяет правила межсетевого экрана, маршрутизирует трафик между подсетями и выполняет NAT при выходе в Интернет. Передаёт разрешённые пакеты обратно в ядро или провайдеру.',port:'10G uplink / WAN',role:'Маршрутизатор ядра',tags:['RouterOS','Firewall','VPN']},
+ {id:'CORE1',type:'core',floor:'f1',x:4.6,y:0.5,z:-7.2,name:'Коммутатор ядра',model:'MikroTik CRS326-24S+2Q+RM',desc:'Центральный коммутатор-агрегатор: принимает потоки с этажных коммутаторов по 10G SFP+ ВОЛС, передаёт Ethernet-кадры к серверам и маршрутизатору. В выбранной логической схеме межсетевую маршрутизацию выполняет CCR2004.',port:'SFP+ 10G',role:'Core Switch',tags:['L3','SFP+','Aggregation']},
+ {id:'SRV1',type:'server',floor:'f1',x:2.3,y:0.5,z:-4.8,name:'Сервер виртуализации №1',model:'2U Xeon / 64 GB / RAID',desc:'Сервер виртуализации: размещает службы Active Directory, DNS, DHCP и файловый сервис. Получает запросы от сотрудников через коммутаторы, обрабатывает их и формирует ответы.',port:'2×1G',role:'AD / DNS / DHCP / FILE',tags:['VM','AD','Storage']},
+ {id:'SRV2',type:'server',floor:'f1',x:4.8,y:0.5,z:-4.8,name:'Сервер виртуализации №2',model:'2U Xeon / 64 GB / RAID',desc:'Второй сервер виртуализации: запускает прикладные виртуальные машины, резервные сервисы и изолированную тестовую среду. Может принимать часть нагрузки при обслуживании основного сервера.',port:'2×1G',role:'Application / Reserve',tags:['Backup VM','Apps']},
+ {id:'NAS1',type:'nas',floor:'f1',x:6.4,y:0.5,z:-4.7,name:'NAS резервного копирования',model:'Rack NAS 8-bay',desc:'NAS принимает копии файлов и виртуальных машин с серверов, хранит архивы и помогает восстановить данные после сбоя. Подключён к коммутатору ядра.',port:'2×1G',role:'Backup Storage',tags:['NAS','Backup']},
+ {id:'UPS1',type:'ups',floor:'f1',x:6.0,y:0.5,z:-7.0,name:'ИБП',model:'3000VA Rackmount',desc:'ИБП обеспечивает электропитание оборудования при кратких перебоях и позволяет корректно завершить работу серверов. Не передаёт сетевые пакеты.',port:'220V / UPS',role:'Питание',tags:['UPS','Power']},
+ {id:'ODF1',type:'fiber',floor:'f1',x:7.3,y:0.5,z:-7.0,name:'Оптический кросс',model:'ODF 24 port',desc:'Оптический кросс (ODF) — пассивное оконечивание и защита оптических волокон. Не маршрутизирует пакеты: световые сигналы идут по волокнам через кросс и SFP+ трансиверы.',port:'24 LC',role:'ВОЛС магистраль',tags:['ODF','Fiber']},
+ {id:'SW1',type:'switch',floor:'f1',x:-9.0,y:0.5,z:2.2,name:'Коммутатор 1 этажа',model:'MikroTik CRS328-24P-4S+RM',desc:'PoE-коммутатор доступа: объединяет компьютеры, Wi-Fi точки и IP-камеры первого этажа по медным линиям Cat.6. Выделяет VLAN и подаёт PoE на совместимые устройства.',port:'24×GE PoE + 4×SFP+',role:'Access Floor 1',tags:['PoE','Access']},
+ {id:'AP1',type:'ap',floor:'f1',x:-10.8,y:0.5,z:-5.1,name:'Точка доступа 1F-A',model:'MikroTik cAP ax',desc:'Покрытие зоны ресепшен и бухгалтерии.',port:'PoE / Wi‑Fi 6',role:'Wi‑Fi',tags:['AP']},
+ {id:'AP2',type:'ap',floor:'f1',x:9.0,y:0.5,z:0.2,name:'Точка доступа 1F-B',model:'MikroTik cAP ax',desc:'Покрытие переговорной и коридорной зоны.',port:'PoE / Wi‑Fi 6',role:'Wi‑Fi',tags:['AP']},
+ {id:'CAM1',type:'camera',floor:'f1',x:-13.5,y:0.5,z:-8.0,name:'IP-камера входа',model:'2 MP IP Camera',desc:'Контроль входной группы.',port:'PoE',role:'CCTV',tags:['Camera']},
+ {id:'NVR1',type:'nvr',floor:'f1',x:7.6,y:0.5,z:-4.5,name:'Сетевой видеорегистратор',model:'NVR 16 ch',desc:'NVR получает видеопотоки от IP-камер по выделенной VLAN 60, записывает их и обеспечивает просмотр архива. При нахождении NVR и камер в одной VLAN межсетевой маршрутизатор не требуется.',port:'1G LAN',role:'CCTV Recording',tags:['NVR']},
+ {id:'SW2',type:'switch',floor:'f2',x:12.0,y:4.7,z:-6.4,name:'Коммутатор 2 этажа',model:'MikroTik CRS328-24P-4S+RM',desc:'PoE-коммутатор второго этажа в TR-2: принимает кадры с ПК, камер и Wi-Fi по Cat.6, сохраняет принадлежность к VLAN и отправляет uplink по SFP+ ВОЛС в центральный коммутатор.',port:'24×GE PoE + 4×SFP+',role:'Access Floor 2',tags:['PoE','TR-2']},
+ {id:'AP3',type:'ap',floor:'f2',x:-10.0,y:4.7,z:-4.5,name:'Точка доступа 2F-A',model:'MikroTik cAP ax',desc:'Wi‑Fi покрытие open-space A.',port:'PoE / Wi‑Fi 6',role:'Wi‑Fi',tags:['AP']},
+ {id:'AP4',type:'ap',floor:'f2',x:0.0,y:4.7,z:5.0,name:'Точка доступа 2F-B',model:'MikroTik cAP ax',desc:'Wi‑Fi покрытие переговорной и отдела продаж.',port:'PoE / Wi‑Fi 6',role:'Wi‑Fi',tags:['AP']},
+ {id:'PC2',type:'pc',floor:'f2',x:-8.5,y:4.7,z:-1.5,name:'Группа ПК open-space',model:'Рабочие станции',desc:'Условная группа рабочих мест сотрудников второго этажа.',port:'Cat.6',role:'User Network',tags:['PC','Staff']},
+ {id:'IP2',type:'phone',floor:'f2',x:-1.0,y:4.7,z:3.0,name:'VoIP телефон',model:'IP Phone',desc:'IP-телефон в переговорной/отделе продаж.',port:'PoE / SIP',role:'Voice',tags:['VoIP']},
+ {id:'CAM2',type:'camera',floor:'f2',x:14.0,y:4.7,z:7.0,name:'IP-камера коридора',model:'2 MP IP Camera',desc:'Контроль коридора и архива.',port:'PoE',role:'CCTV',tags:['Camera']},
+ {id:'SW3',type:'switch',floor:'f3',x:10.8,y:8.9,z:-6.2,name:'Коммутатор 3 этажа',model:'MikroTik CRS328-24P-4S+RM',desc:'PoE-коммутатор третьего этажа в TR-3: соединяет ПК и беспроводные точки с сетью, подаёт питание PoE и направляет кадры по межэтажной оптике в ядро.',port:'24×GE PoE + 4×SFP+',role:'Access Floor 3',tags:['PoE','TR-3']},
+ {id:'AP5',type:'ap',floor:'f3',x:-9.5,y:8.9,z:-5.0,name:'Точка доступа 3F-A',model:'MikroTik cAP ax',desc:'Покрытие IT-отдела.',port:'PoE / Wi‑Fi 6',role:'Wi‑Fi',tags:['AP']},
+ {id:'AP6',type:'ap',floor:'f3',x:1.5,y:8.9,z:4.0,name:'Точка доступа 3F-B',model:'MikroTik cAP ax',desc:'Покрытие учебной зоны и переговорной.',port:'PoE / Wi‑Fi 6',role:'Wi‑Fi',tags:['AP']},
+ {id:'PC3',type:'pc',floor:'f3',x:-10.0,y:8.9,z:2.2,name:'Группа ПК IT-отдела',model:'Рабочие станции',desc:'Условная группа рабочих мест IT-специалистов.',port:'Cat.6',role:'User Network',tags:['PC','IT']},
+ {id:'LAB3',type:'pc',floor:'f3',x:0.0,y:8.9,z:-4.0,name:'Учебные ПК',model:'Учебные станции',desc:'Небольшая учебная/демо-зона для внутренних тренингов.',port:'Cat.6',role:'Training',tags:['PC','Lab']},
+ {id:'CAM3',type:'camera',floor:'f3',x:14.0,y:8.9,z:7.0,name:'IP-камера 3 этажа',model:'2 MP IP Camera',desc:'Контроль общей зоны третьего этажа.',port:'PoE',role:'CCTV',tags:['Camera']}
+];
+const deviceMap=Object.fromEntries(devices.map(d=>[d.id,d]));
+const connections=[
+ ['ISP','RTR1','fiber'],['RTR1','CORE1','copper'],['CORE1','SRV1','copper'],['CORE1','SRV2','copper'],['CORE1','NAS1','copper'],['CORE1','ODF1','fiber'],['CORE1','SW1','fiber'],['CORE1','SW2','fiber'],['CORE1','SW3','fiber'],['CORE1','NVR1','copper'],
+ ['SW1','AP1','copper'],['SW1','AP2','copper'],['SW1','CAM1','camera'],
+ ['SW2','AP3','copper'],['SW2','AP4','copper'],['SW2','PC2','copper'],['SW2','IP2','voice'],['SW2','CAM2','camera'],
+ ['SW3','AP5','copper'],['SW3','AP6','copper'],['SW3','PC3','copper'],['SW3','LAB3','copper'],['SW3','CAM3','camera']
+];
+const estimate=[
+ ['Маршрутизатор MikroTik CCR2004-1G-12S+2XS',1,420000],
+ ['Коммутатор ядра MikroTik CRS326-24S+2Q+RM',1,520000],
+ ['Коммутатор доступа PoE MikroTik CRS328-24P-4S+RM',3,430000],
+ ['Коммутатор доступа MikroTik CRS326-24G-2S+RM',1,240000],
+ ['Точка доступа MikroTik cAP ax',6,95000],
+ ['Сервер виртуализации 2U',2,1450000],
+ ['Система резервного копирования NAS 8-bay',1,850000],
+ ['ИБП 3000VA Rackmount',1,420000],
+ ['Шкаф серверный 42U',1,290000],
+ ['Патч-панель 24 порта Cat.6',4,25000],
+ ['Кабельный органайзер 1U',4,15000],
+ ['PDU 19"',3,18000],
+ ['Оптический кросс 24 порта',1,70000],
+ ['SFP+ 10G модули',8,32000],
+ ['Оптический кабель стояка 12 волокон, м',180,1200],
+ ['Комплект пигтейлов, кассет, сварки, патчкордов ВОЛС',1,120000],
+ ['Кабель U/UTP Cat.6, коробка 305 м',16,68000],
+ ['Модуль Keystone Cat.6',96,2500],
+ ['Двойная розетка / рамка / короб',48,3000],
+ ['Патч-корд Cat.6 2 м',96,3500],
+ ['Патч-корд Cat.6 1 м для шкафа',96,3000],
+ ['IP-телефон',12,38000],
+ ['IP-камера',9,48000],
+ ['Сетевой видеорегистратор NVR',1,240000],
+ ['Лотки, крепёж, маркировка, заземление, расходные материалы',1,350000]
+];
+const labor=[
+ ['Монтаж СКС, 96 портов',1,1152000],
+ ['Монтаж ВОЛС, сварка, тестирование',1,420000],
+ ['Монтаж шкафа и оборудования',1,180000],
+ ['Настройка MikroTik, серверов и служб',1,450000],
+ ['Пусконаладка, маркировка, исполнительная документация',1,180000]
+];
+const eqTotal=estimate.reduce((s,[,q,p])=>s+q*p,0);
+const labTotal=labor.reduce((s,[,q,p])=>s+q*p,0);
+const allTotal=eqTotal+labTotal;
+const metrics=[
+ ['96','ПОРТОВ СКС'],['6','ТОЧЕК Wi‑Fi'],['3','ЭТАЖНЫХ КОММУТАТОРА'],['2','СЕРВЕРА'],['9','IP-КАМЕР'],['10G','МАГИСТРАЛЬ ВОЛС']
+];
+const scene=document.getElementById('scene'),cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+const floorMenu=document.getElementById('floorMenu'),detail=document.getElementById('detail'),metricsBox=document.getElementById('metrics'),summaryGrid=document.getElementById('summaryGrid'),equipTable=document.getElementById('equipTable'),laborTable=document.getElementById('laborTable');
+metricsBox.innerHTML=metrics.map(([v,t])=>`<div class="metric"><strong>${v}</strong><small>${t}</small></div>`).join('');
+summaryGrid.innerHTML=`<div class="sumcard"><strong>${money(eqTotal)}</strong><small>Оборудование</small></div><div class="sumcard"><strong>${money(labTotal)}</strong><small>Монтаж и настройка</small></div><div class="sumcard"><strong>${money(allTotal)}</strong><small>Итого проект</small></div>`;
+function fillTable(el,rows,title){let html=`<thead><tr><th colspan="4">${title}</th></tr><tr><th>Наименование</th><th class="right">Кол-во</th><th class="right">Цена</th><th class="right">Сумма</th></tr></thead><tbody>`;rows.forEach(([n,q,p])=>html+=`<tr><td>${n}</td><td class="right">${q}</td><td class="right">${money(p)}</td><td class="right">${money(q*p)}</td></tr>`);html+=`</tbody>`;el.innerHTML=html;}
+fillTable(equipTable,estimate,'Закуп оборудования'); fillTable(laborTable,labor,'Монтаж, настройка и пусконаладка');
+let current='all',selected='CORE1';
+const flags={fiber:true,copper:true,walls:true,labels:true};
+['showFiber','showCopper','showWalls','showLabels'].forEach(id=>document.getElementById(id).addEventListener('change',e=>{flags[id==='showFiber'?'fiber':id==='showCopper'?'copper':id==='showWalls'?'walls':'labels']=e.target.checked;draw();}));
+const equipmentGuideData=[
+ {id:'RTR1',title:'CCR2004 — маршрутизатор и шлюз',icon:'⇄',explain:'Соединяет разные VLAN, применяет Firewall, NAT и VPN. Выводит локальную сеть в Интернет.'},
+ {id:'CORE1',title:'CRS326 — коммутатор ядра',icon:'✣',explain:'Собирает связи от всех этажей по 10G SFP+ и подключает маршрутизатор, серверы и NAS.'},
+ {id:'SW3',title:'CRS328 — этажные коммутаторы',icon:'⫶',explain:'Принимают Cat.6 от ПК, камер и Wi-Fi; разделяют VLAN, питают устройства PoE и передают трафик в ядро по ВОЛС.'},
+ {id:'ODF1',title:'ODF и SFP+ — оптическая магистраль',icon:'◇',explain:'SFP+ преобразуют электрические данные в свет и обратно. ODF — пассивный кросс для соединения и защиты волокон.'},
+ {id:'AP3',title:'cAP ax — точка Wi-Fi',icon:'◉',explain:'Принимает беспроводной сигнал ноутбука/телефона и передаёт трафик по Ethernet на этажный коммутатор.'},
+ {id:'SRV1',title:'SRV1 / SRV2 — серверы',icon:'▣',explain:'Предоставляют доменные учётные записи, DNS, DHCP, файлы, приложения и виртуальные машины.'},
+ {id:'NAS1',title:'NAS — резервное хранение',icon:'▤',explain:'Принимает резервные копии с серверов и хранит данные для последующего восстановления.'},
+ {id:'NVR1',title:'NVR — видеозапись',icon:'▣',explain:'Принимает видеопотоки от камер в VLAN 60 и записывает их в архив.'},
+ {id:'UPS1',title:'ИБП — защита электропитания',icon:'⚡',explain:'Поддерживает работу серверной при кратких перебоях питания; сетевые пакеты через него не проходят.'}
+];
+const equipmentGuide=document.getElementById('equipmentGuide');
+function updateEquipGuide(){equipmentGuide.querySelectorAll('[data-device]').forEach(el=>el.classList.toggle('active',el.dataset.device===selected));}
+equipmentGuide.innerHTML=equipmentGuideData.map(d=>`<button class="equip-info" data-device="${d.id}" title="Показать ${d.title}"><span class="equip-symbol">${d.icon}</span><span class="equip-text"><strong>${d.title}</strong><small>${d.explain}</small></span></button>`).join('');
+equipmentGuide.addEventListener('click',e=>{const b=e.target.closest('[data-device]');if(!b)return;selected=b.dataset.device;current='all';renderMenu();updateDetail();draw();document.getElementById('detail').scrollIntoView({behavior:'smooth',block:'center'});});
+function renderMenu(){floorMenu.innerHTML=floors.map((f,i)=>`<button class="fbtn ${current===f.id?'active':''}" data-id="${f.id}"><div class="fnum">${i===0?'ALL':i}</div><div class="ftext"><strong>${f.title}</strong><small>${f.sub}</small></div></button>`).join('');Array.from(floorMenu.querySelectorAll('.fbtn')).forEach(b=>b.onclick=()=>{current=b.dataset.id;selected=({all:'CORE1',f1:'CORE1',f2:'SW2',f3:'SW3'})[current];renderMenu();updateDetail();draw();});}
+renderMenu();
+function selectedData(){return deviceMap[selected]||devices[0]}
+function updateDetail(){const d=selectedData();updateEquipGuide();detail.innerHTML=`<h3>${d.name}</h3><div class="code">${d.model}</div><p>${d.desc}</p><div>${(d.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('')}</div><div class="detail-grid"><div><small>Этаж / зона</small><b>${d.floor==='f1'?'1 этаж':d.floor==='f2'?'2 этаж':'3 этаж'}</b></div><div><small>Роль</small><b>${d.role||'Сетевой элемент'}</b></div><div><small>Интерфейс</small><b>${d.port||'Сетевое подключение'}</b></div><div><small>Комментарий проектировщика</small><b>Размещение показано в учебной проектной модели, с привязкой к функциональной зоне.</b></div></div>`;}
+updateDetail();
+let W=1,H=1,dpr=1;
+let cam={az:-0.92,el:0.56,zoom:1.08,tx:0,tz:0,ty:4.5};
+function resize(){const r=scene.getBoundingClientRect();W=Math.max(300,r.width);H=Math.max(300,r.height);dpr=Math.min(2,window.devicePixelRatio||1);cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);draw();}
+window.addEventListener('resize',resize);
+function proj(x,y,z){const dx=x-cam.tx,dz=z-cam.tz,dy=y-cam.ty,ca=Math.cos(cam.az),sa=Math.sin(cam.az),ce=Math.cos(cam.el),se=Math.sin(cam.el);const xx=dx*ca-dz*sa,zz=dx*sa+dz*ca;const unit=Math.min(W/58,H/44)*cam.zoom;return {x:W*.52+xx*unit,y:H*.60-(dy*ce-zz*se)*unit,depth:zz*ce+dy*se,unit};}
+function poly(pts,fill,stroke,width=1){ctx.beginPath();pts.forEach((p,i)=>{const q=proj(...p);i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y)});ctx.closePath();if(fill){ctx.fillStyle=fill;ctx.fill();} if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=width;ctx.stroke();}}
+function line3(pts,color,w=1.2,dash=[]){ctx.beginPath();ctx.setLineDash(dash);pts.forEach((p,i)=>{const q=proj(...p);i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y)});ctx.strokeStyle=color;ctx.lineWidth=w;ctx.lineCap='round';ctx.lineJoin='round';ctx.stroke();ctx.setLineDash([]);}
+function txt(str,x,y,z,size=10,color='#cbe4f2'){const p=proj(x,y,z);if(p.x<-150||p.x>W+150||p.y<-100||p.y>H+100)return;ctx.font=`700 ${size}px Segoe UI,Arial,sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillStyle=color;ctx.shadowColor='#08131f';ctx.shadowBlur=6;ctx.fillText(str,p.x,p.y);ctx.shadowBlur=0;}
+function rgba(hex,a){hex=hex.replace('#','');const r=parseInt(hex.slice(0,2),16),g=parseInt(hex.slice(2,4),16),b=parseInt(hex.slice(4,6),16);return `rgba(${r},${g},${b},${a})`;}
+function visible(f){return current==='all'||current===f;}
+function fade(f){if(current==='all')return 1; return current===f?1:.10;}
+function wallSeg(x1,z1,x2,z2,outer=false){return {x1,z1,x2,z2,outer};}
+function addBox(list,x1,y1,z1,x2,y2,z2,fill,stroke){const faces=[[[x1,y1,z1],[x2,y1,z1],[x2,y2,z1],[x1,y2,z1]],[[x2,y1,z1],[x2,y1,z2],[x2,y2,z2],[x2,y2,z1]],[[x1,y1,z2],[x2,y1,z2],[x2,y2,z2],[x1,y2,z2]],[[x1,y1,z1],[x1,y1,z2],[x1,y2,z2],[x1,y2,z1]],[[x1,y2,z1],[x2,y2,z1],[x2,y2,z2],[x1,y2,z2]]];faces.forEach(face=>{const c=face.reduce((s,p)=>[s[0]+p[0],s[1]+p[1],s[2]+p[2]],[0,0,0]).map(v=>v/4);list.push({d:proj(...c).depth,fn:()=>poly(face,fill,stroke,.9)});});}
+function devColor(t){return ({router:'#5fe6f0',core:'#7db6ff',server:'#7aaeff',nas:'#7fe0ba',ups:'#ffe08a',switch:'#63e1d2',ap:'#87e6bf',camera:'#ffbd77',phone:'#ffb095',pc:'#b69eff',nvr:'#ffd28a',fiber:'#c3a2ff',cloud:'#e6f1ff'})[t]||'#9ec4ff'}
+let hit=[];
+
+// Единственный источник геометрии соединения: трасса и анимация используют одинаковые точки.
+function cablePoints(a,b,kind){
+ const A=deviceMap[a],B=deviceMap[b];if(!A||!B)return [];
+ if(a==='ISP'&&b==='RTR1')return [[A.x,A.y,A.z],[1.0,13.7,-5.5],[1.0,0.8,-0.5],[A.x,0.8,A.z],[B.x,B.y,B.z]];
+ if(kind==='fiber'&&['SW2','SW3'].includes(b))return [[A.x,A.y,A.z],[1.1,A.y,-0.6],[1.1,B.y,-0.6],[B.x,B.y,B.z]];
+ if(kind==='fiber'&&b==='SW1')return [[A.x,A.y,A.z],[1.1,A.y,-0.6],[-6.0,A.y,-0.6],[-6.0,B.y,2.2],[B.x,B.y,B.z]];
+ return [[A.x,A.y,A.z],[B.x,B.y,B.z]];
+}
+const scenarios={
+ pc3srv:{title:'ПК 3 этажа → сервер 1 этажа',nodeIds:['PC3','SW3','CORE1','RTR1','CORE1','SRV1'],description:'Запрос из VLAN 40 к серверу VLAN 20: коммутатор 3-го этажа → 10G ВОЛС → ядро → CCR2004 (правила доступа и меж-VLAN маршрутизация) → ядро → сервер. Ответ проходит обратно.',explain:[
+   'ПК формирует IP-пакет для сервера и передаёт Ethernet-кадр по витой паре Cat.6 на CRS328 третьего этажа.',
+   'CRS328 передаёт кадр через 10G SFP+ модуль; электрический сигнал преобразуется в свет и идёт по ВОЛС на 1-й этаж.',
+   'Коммутатор ядра CRS326 принимает оптический поток и передаёт кадр шлюзу VLAN — CCR2004.',
+   'CCR2004 проверяет межсетевые правила и маршрутизирует пакет из VLAN 40 в VLAN 20, затем возвращает его через CRS326.',
+   'Сервер SRV1 обрабатывает запрос. Пакет ответа возвращается по обратной цепочке к ПК.'
+ ]},
+ pc2isp:{title:'ПК 2 этажа → Интернет',nodeIds:['PC2','SW2','CORE1','RTR1','ISP'],description:'ПК второго этажа → CRS328 → ВОЛС 10G → CRS326 → CCR2004 (Firewall/NAT) → провайдер. Ответ снаружи возвращается по соединению.',explain:[
+   'Компьютер отправляет данные по кабелю Cat.6 в коммутатор CRS328 на втором этаже.',
+   'Коммутатор маркирует/передаёт кадр в соответствующей VLAN и отправляет его по межэтажной ВОЛС.',
+   'Коммутатор CRS326 на первом этаже агрегирует потоки и передаёт трафик шлюзу CCR2004.',
+   'CCR2004 проверяет фильтры Firewall, выполняет NAT для выхода в Интернет и передаёт пакет провайдеру.',
+   'Ответный интернет-трафик возвращается через CCR2004, ядро, ВОЛС и этажный коммутатор к ПК.'
+ ]},
+ wifi2isp:{title:'Wi-Fi 2 этажа → Интернет',nodeIds:['AP3','SW2','CORE1','RTR1','ISP'],description:'Сначала клиент передаёт данные по радио на MikroTik cAP ax, затем по Cat.6/PoE, ВОЛС и через CCR2004 с NAT в Интернет.',explain:[
+   'Телефон или ноутбук отправляет Wi-Fi кадр по радиоканалу на cAP ax (клиент отдельно не нарисован).',
+   'Точка доступа переносит данные в проводной Ethernet и передаёт их по Cat.6 на PoE-коммутатор CRS328.',
+   'CRS328 направляет трафик VLAN Wi-Fi через SFP+ и оптическую магистраль к CRS326.',
+   'CCR2004 применяет политику безопасности и NAT; затем отправляет трафик провайдеру.',
+   'Ответ проходит обратно: ISP → CCR2004 → CRS326 → ВОЛС → CRS328 → cAP ax → Wi-Fi клиент.'
+ ]},
+ cam3nvr:{title:'Камера 3 этажа → видеорегистратор',nodeIds:['CAM3','SW3','CORE1','NVR1'],description:'Камера VLAN 60 → Cat.6/PoE → CRS328 → 10G ВОЛС → CRS326 → NVR на первом этаже; запись видеопотока.',explain:[
+   'IP-камера формирует сжатый видеопоток и передаёт кадры по Cat.6, получая питание PoE от коммутатора.',
+   'CRS328 третьего этажа изолирует видеотрафик в VLAN 60 и передаёт его по ВОЛС к ядру.',
+   'CRS326 на первом этаже направляет поток в порт NVR в той же VLAN 60 — CCR2004 для этого пути не нужен.',
+   'NVR принимает поток, записывает его и предоставляет архив при разрешённом доступе.'
+ ]},
+ srvnas:{title:'Сервер → NAS',nodeIds:['SRV1','CORE1','NAS1'],description:'Резервное копирование остаётся в серверной: SRV1 → Cat.6 → CRS326 → Cat.6 → NAS. Межэтажная ВОЛС здесь не участвует.',explain:[
+   'Сервер SRV1 запускает задание резервного копирования: формирует блоки данных.',
+   'Данные по Ethernet Cat.6 поступают в CRS326, который коммутирует их к порту NAS.',
+   'NAS принимает и сохраняет данные на дисковом массиве, подтверждает получение. При той же VLAN маршрутизатор не нужен.'
+ ]},
+ pc2srv:{title:'ПК 2 этажа → сервер 1 этажа',nodeIds:['PC2','SW2','CORE1','RTR1','CORE1','SRV1'],description:'Рабочая VLAN 40 → CRS328 второго этажа → ВОЛС → CRS326 → маршрутизатор CCR2004 → VLAN серверов 20 → SRV1.',explain:[
+   'ПК второго этажа отправляет запрос к файлам или службе на SRV1 через витую пару Cat.6.',
+   'CRS328 передаёт кадры по 10G SFP+ ВОЛС на первый этаж, в коммутатор ядра CRS326.',
+   'CCR2004 проверяет правила между VLAN 40 и VLAN 20, а затем направляет пакет к сети серверов.',
+   'SRV1 отвечает, после чего пакет по обратному пути через CCR2004, CRS326, ВОЛС и CRS328 возвращается на ПК.'
+ ]}
+};
+function updateScenarioExplanation(){
+ const s=signalRoute.scenario;
+ const el=document.getElementById('signalExplanation');
+ el.innerHTML=`<strong>Как проходит сигнал:</strong><ol>${s.explain.map(step=>`<li>${step}</li>`).join('')}</ol><small>На схеме показан логический путь трафика. Подсвеченные линии — условная визуализация, а не мониторинг реального MikroTik.</small>`;
+}
+const signalName=id=>({PC3:'ПК 3 этажа',PC2:'ПК 2 этажа',SRV1:'Сервер SRV1',NAS1:'NAS',SW3:'CRS328 · 3 эт.',SW2:'CRS328 · 2 эт.',CORE1:'CRS326 · ядро',RTR1:'CCR2004 · шлюз',ISP:'Интернет',NVR1:'Видеорегистратор',AP3:'Wi-Fi · 2 эт.',CAM3:'IP-камера · 3 эт.'})[id]||(deviceMap[id]||{}).name||id;
+function buildSignalRoute(key){
+ const scenario=scenarios[key];let legs=[],total=0;
+ for(let i=0;i<scenario.nodeIds.length-1;i++){
+   const from=scenario.nodeIds[i],to=scenario.nodeIds[i+1];
+   const link=connections.find(([a,b])=>(a===from&&b===to)||(a===to&&b===from));
+   if(!link)throw new Error('Нет связи между '+from+' и '+to);
+   const [a,b,kind]=link;
+   const pts=cablePoints(a,b,kind);
+   if(a!==from)pts.reverse();
+   const slices=[];let len=0;
+   for(let j=0;j<pts.length-1;j++){
+     const p=pts[j],q=pts[j+1],distance=Math.hypot(q[0]-p[0],q[1]-p[1],q[2]-p[2]);
+     slices.push({a:p,b:q,start:len,end:len+distance});len+=distance;
+   }
+   legs.push({from,to,kind,pts,slices,length:len,start:total,end:total+len});total+=len;
+ }
+ return {scenario,legs,total};
+}
+function positionAt(legs,dist){
+ for(let i=0;i<legs.length;i++){
+  const leg=legs[i];if(dist>leg.end && i<legs.length-1)continue;
+  const local=Math.max(0,Math.min(leg.length,dist-leg.start));
+  for(let j=0;j<leg.slices.length;j++){
+   const seg=leg.slices[j];if(local>seg.end && j<leg.slices.length-1)continue;
+   const t=seg.end===seg.start?0:Math.max(0,Math.min(1,(local-seg.start)/(seg.end-seg.start)));
+   return {point:seg.a.map((n,k)=>n+(seg.b[k]-n)*t),leg:i};
+  }
+ }
+ return {point:legs.at(-1).pts.at(-1),leg:legs.length-1};
+}
+let scenarioKey='pc3srv';
+let signalRoute=buildSignalRoute(scenarioKey);
+let signalRunning=true,signalPhase=0,signalMultiplier=1;
+let signalUpdated=0;
+const phaseWait=0.7;
+function signalDur(){return Math.max(4,Math.min(11,signalRoute.total/12));}
+function setScenario(key){
+ scenarioKey=key;signalRoute=buildSignalRoute(key);signalPhase=0;signalRunning=true;
+ current='all';renderMenu();
+ selected=signalRoute.scenario.nodeIds[0];updateDetail();
+ document.getElementById('signalToggle').textContent='Ⅱ ПАУЗА';
+ updateTrafficUI(true);updateScenarioExplanation();draw();
+}
+function trafficInfo(){
+ const duration=signalDur(),t=signalPhase,cycle=duration*2+phaseWait*2;
+ let dir='request',distance=0,p=0;
+ if(t<duration){distance=signalRoute.total*t/duration;p=t/duration;}
+ else if(t<duration+phaseWait){distance=signalRoute.total;p=1;dir='wait';}
+ else if(t<duration*2+phaseWait){dir='reply';distance=signalRoute.total*(1-(t-duration-phaseWait)/duration);p=(t-duration-phaseWait)/duration;}
+ else{dir='gap';distance=0;p=1;}
+ const pose=positionAt(signalRoute.legs,distance);
+ return {dir,distance,progress:p,leg:pose.leg,point:pose.point,cycle};
+}
+function updateTrafficUI(force=false){
+ const now=performance.now();if(!force&&now-signalUpdated<95)return;signalUpdated=now;
+ const t=trafficInfo(),leg=signalRoute.legs[t.leg],d=t.dir;
+ const text=d==='request'?'ЗАПРОС':d==='reply'?'ОТВЕТ':d==='wait'?'ОБРАБОТКА':'ГОТОВО';
+ const stage=d==='wait'?'Пакет доставлен — формируется ответ':d==='gap'?'Новый цикл передачи':signalName(d==='reply'?leg.to:leg.from)+' → '+signalName(d==='reply'?leg.from:leg.to);
+ document.getElementById('signalStatus').innerHTML=`<b>${signalRunning?'●':'Ⅱ'} ${text}</b> · ${stage}`;
+ document.getElementById('signalProgress').style.width=Math.max(2,Math.round(t.progress*100))+'%';
+ document.getElementById('signalProgress').style.background=d==='reply'?'linear-gradient(90deg,#b9703c,#ffcb7b)':'linear-gradient(90deg,#35b7d6,#7ff0d7)';
+ document.getElementById('signalBadge').textContent=signalRunning?'● ПЕРЕДАЧА':'Ⅱ ПАУЗА';
+ document.getElementById('sceneSignalTitle').textContent=signalRoute.scenario.title;
+ document.getElementById('sceneSignalStage').textContent=text+' · '+stage;
+ const steps=signalRoute.scenario.nodeIds;
+ document.getElementById('signalPath').innerHTML=steps.map((id,i)=>{
+  const active=(d==='request' && (i===t.leg || i===t.leg+1)) || (d==='reply'&&(i===t.leg||i===t.leg+1));
+  return `<span class="${active?'active':''}">${signalName(id)}</span>${i<steps.length-1?' <b style="color:#698ea7">→</b> ':''}`;
+ }).join('')+`<div style="border-top:1px solid #274a5b;padding-top:8px;margin-top:8px;color:#89a9ba">${signalRoute.scenario.description}</div>`;
+}
+function dotAt(dist,shade,radius){
+ if(dist<0||dist>signalRoute.total)return;
+ const p=positionAt(signalRoute.legs,dist).point,s=proj(...p);
+ ctx.save();ctx.shadowColor=shade;ctx.shadowBlur=21;
+ ctx.beginPath();ctx.arc(s.x,s.y,radius*2.4,0,Math.PI*2);ctx.fillStyle=shade.replace('1)', '.13)');ctx.fill();
+ ctx.beginPath();ctx.arc(s.x,s.y,radius,0,Math.PI*2);ctx.fillStyle=shade;ctx.fill();
+ ctx.beginPath();ctx.arc(s.x,s.y,Math.max(1.5,radius*.45),0,Math.PI*2);ctx.fillStyle='#ffffff';ctx.fill();ctx.restore();
+}
+function renderSignals(){
+ const t=trafficInfo();
+ // Свечение физического пути передачи поверх полупрозрачных стен.
+ signalRoute.legs.forEach((leg,i)=>{
+  const color=leg.kind==='fiber'?'#c8a6ff':leg.kind==='camera'?'#ffbc78':leg.kind==='voice'?'#ffb18a':'#65e3dc';
+  ctx.save();ctx.shadowColor=color;ctx.shadowBlur=10;
+  line3(leg.pts,rgba(color,.20),9);ctx.restore();
+  line3(leg.pts,rgba(color,.95),i===t.leg?4.4:3.3);
+ });
+ if(t.dir==='request'||t.dir==='reply'){
+  const forward=t.dir==='request',shade=forward?'rgba(92,246,255,1)':'rgba(255,196,104,1)';
+  const direction=forward?-1:1;
+  for(let j=3;j>=0;j--)dotAt(t.distance+direction*j*1.8,shade,j===0?5.2:Math.max(1.2,3.5-j*.65));
+  const pos=proj(...t.point);
+  const label=forward?'ДАННЫЕ →':'← ОТВЕТ';
+  ctx.font='800 10px Segoe UI,Arial,sans-serif';ctx.textAlign='center';ctx.textBaseline='bottom';
+  const width=ctx.measureText(label).width+15;
+  ctx.fillStyle='rgba(6,22,33,.88)';ctx.fillRect(pos.x-width/2,pos.y-35,width,17);
+  ctx.fillStyle=forward?'#abfaff':'#ffdf9a';ctx.fillText(label,pos.x,pos.y-20);
+ }else if(t.dir==='wait')dotAt(signalRoute.total,'rgba(92,246,255,1)',6);
+}
+function signalFrame(ts){
+ if(!signalFrame.last)signalFrame.last=ts;
+ const diff=Math.min(.065,Math.max(0,(ts-signalFrame.last)/1000));signalFrame.last=ts;
+ if(signalRunning){signalPhase+=(diff*signalMultiplier);const full=signalDur()*2+phaseWait*2;if(signalPhase>=full)signalPhase%=full;}
+ draw();updateTrafficUI();requestAnimationFrame(signalFrame);
+}
+
+function buildScene(){const items=[]; hit=[];
+ items.push({d:-99999,fn:()=>poly([[-20,-.6,-14],[20,-.6,-14],[20,-.6,12],[-20,-.6,12]],'rgba(18,48,62,.52)','rgba(80,128,155,.20)',1)});
+ // riser shaft column
+ addBox(items,shaft.x1,0,shaft.z1,shaft.x2,11.8,shaft.z2,'rgba(90,210,235,.08)','rgba(100,220,245,.24)');
+ building.forEach(f=>{
+   const op=fade(f.id); if(op<.06)return; const y=f.y;
+   const x1=-15,x2=15,z1=-9,z2=8;
+   const top=[[x1,y,z1],[x2,y,z1],[x2,y,z2],[x1,y,z2]];
+   items.push({d:proj(0,y,0).depth,fn:()=>poly(top,rgba(f.color,0.72*op),rgba('#7ec0dd',0.6*op),1.1)});
+   // slab sides
+   [[[x1,y,z1],[x2,y,z1],[x2,y-.22,z1],[x1,y-.22,z1]],[[x2,y,z1],[x2,y,z2],[x2,y-.22,z2],[x2,y-.22,z1]],[[x1,y,z2],[x2,y,z2],[x2,y-.22,z2],[x1,y-.22,z2]],[[x1,y,z1],[x1,y,z2],[x1,y-.22,z2],[x1,y-.22,z1]]].forEach(face=>{const c=face.reduce((s,p)=>[s[0]+p[0],s[1]+p[1],s[2]+p[2]],[0,0,0]).map(v=>v/4);items.push({d:proj(...c).depth,fn:()=>poly(face,rgba('#244e65',0.67*op),rgba('#4d7e98',0.28*op),.8)})});
+   if(flags.walls){
+     f.walls.forEach(w=>{
+       const [ax,az,bx,bz,outer]=w; const h=outer?2.8:2.5; const face=[[ax,y+.02,az],[bx,y+.02,bz],[bx,y+h,bz],[ax,y+h,az]]; const c=[(ax+bx)/2,y+h/2,(az+bz)/2];
+       items.push({d:proj(...c).depth,fn:()=>poly(face,rgba('#92bcd0',(outer?0.22:0.14)*op),rgba('#9cdaf0',(outer?0.48:0.30)*op),outer?1.1:.8)});
+     });
+   }
+   if(flags.labels && visible(f.id)) f.rooms.forEach(r=>items.push({d:proj((r.x1+r.x2)/2,y+.05,(r.z1+r.z2)/2).depth+100,fn:()=>txt(r.name,(r.x1+r.x2)/2,y+.12,(r.z1+r.z2)/2,10,'#cbe6f7')}));
+ });
+ // vertical fiber riser
+ if(flags.fiber){items.push({d:proj(1,6,-.4).depth,fn:()=>line3([[1.0,0.8,-0.5],[1.0,4.9,-0.5],[1.0,9.1,-0.5],[1.0,13.7,-5.5]],'rgba(193,162,255,.92)',3.4,[7,5])});}
+ // connections
+ connections.forEach(([a,b,kind])=>{
+   const A=deviceMap[a],B=deviceMap[b]; if(!A||!B)return;
+   if(kind==='fiber'&&!flags.fiber)return; if((kind==='copper'||kind==='voice'||kind==='camera')&&!flags.copper)return;
+   if(!(visible(A.floor)||visible(B.floor)||current==='all')) return;
+   const col=kind==='fiber'?'rgba(193,162,255,.95)':kind==='voice'?'rgba(255,176,149,.95)':kind==='camera'?'rgba(255,189,119,.95)':'rgba(88,223,208,.95)';
+   const dash=kind==='fiber'?[8,4]:kind==='voice'?[4,3]:[];
+   let pts=cablePoints(a,b,kind);
+   const mid=pts[Math.floor(pts.length/2)]; items.push({d:proj(...mid).depth-1,fn:()=>line3(pts,col,kind==='fiber'?2.6:kind==='camera'?2.2:1.8,dash)});
+ });
+ // devices
+ devices.forEach(d=>{
+   const op=fade(d.floor); if(op<.06)return; if(!(current==='all'||current===d.floor||d.id==='ISP'))return;
+   const col=devColor(d.type), edge=selected===d.id?'#ffffff':'#0a1822'; const y=d.y||0.5;
+   if(d.type==='ap'){const c=proj(d.x,y,d.z); items.push({d:c.depth+10,fn:()=>{ctx.beginPath();ctx.arc(c.x,c.y,8,0,Math.PI*2);ctx.fillStyle=rgba(col,0.95*op);ctx.fill();ctx.lineWidth=selected===d.id?2.2:1.2;ctx.strokeStyle=selected===d.id?'#fff':'rgba(8,22,30,.8)';ctx.stroke();}}); hit.push({id:d.id,x:c.x,y:c.y,r:10});}
+   else if(d.type==='cloud'){const c=proj(d.x,d.y,d.z); items.push({d:c.depth+20,fn:()=>{ctx.fillStyle='rgba(234,244,255,.95)';ctx.strokeStyle='rgba(42,78,100,.85)';ctx.lineWidth=1.2;ctx.beginPath();ctx.arc(c.x-8,c.y,8,Math.PI*.5,Math.PI*1.5);ctx.arc(c.x,c.y-6,10,Math.PI,0);ctx.arc(c.x+12,c.y-1,9,Math.PI*1.1,Math.PI*1.9);ctx.arc(c.x+3,c.y+4,13,0,Math.PI);ctx.closePath();ctx.fill();ctx.stroke();}}); hit.push({id:d.id,x:c.x,y:c.y,r:18}); }
+   else if(d.type==='camera'){const c=proj(d.x,y,d.z); items.push({d:c.depth+10,fn:()=>{ctx.fillStyle=rgba(col,0.95*op);ctx.fillRect(c.x-6,c.y-4,12,8);ctx.strokeStyle=edge;ctx.strokeRect(c.x-6,c.y-4,12,8);ctx.beginPath();ctx.moveTo(c.x+6,c.y);ctx.lineTo(c.x+12,c.y-4);ctx.lineTo(c.x+12,c.y+4);ctx.closePath();ctx.fill();ctx.stroke();}}); hit.push({id:d.id,x:c.x,y:c.y,r:12}); }
+   else if(d.type==='phone'){const c=proj(d.x,y,d.z); items.push({d:c.depth+10,fn:()=>{ctx.fillStyle=rgba(col,0.96*op);ctx.strokeStyle=edge;ctx.lineWidth=1.1;ctx.fillRect(c.x-7,c.y-5,14,10);ctx.strokeRect(c.x-7,c.y-5,14,10);ctx.beginPath();ctx.moveTo(c.x-2,c.y-6);ctx.quadraticCurveTo(c.x+7,c.y-10,c.x+9,c.y-2);ctx.stroke();}}); hit.push({id:d.id,x:c.x,y:c.y,r:12}); }
+   else {
+      const w=d.type==='server'||d.type==='nas'||d.type==='ups'||d.type==='nvr'?1.1:.85; const h=d.type==='server'||d.type==='nas'||d.type==='ups'||d.type==='nvr'?0.8:.7; const z=d.type==='server'||d.type==='nas'||d.type==='ups'||d.type==='nvr'?0.9:.85;
+      addBox(items,d.x-w/2,y-0.02,d.z-z/2,d.x+w/2,y+h,d.z+z/2,rgba(col,0.92*op),rgba(edge,0.95),1);
+      const c=proj(d.x,y+h*.55,d.z); hit.push({id:d.id,x:c.x,y:c.y,r:14});
+   }
+   if(flags.labels){items.push({d:proj(d.x,y+.95,d.z).depth+50,fn:()=>txt(d.id,d.x,y+1.0,d.z,10,selected===d.id?'#ffffff':'#d2e9f7')});}
+ });
+ return items.sort((a,b)=>a.d-b.d);
+}
+function draw(){ctx.clearRect(0,0,W,H); const items=buildScene(); items.forEach(it=>it.fn()); renderSignals();}
+let drag=false,last=null,dragDistance=0;
+cv.addEventListener('pointerdown',e=>{drag=true;dragDistance=0;last={x:e.clientX,y:e.clientY};cv.setPointerCapture(e.pointerId)});
+cv.addEventListener('pointermove',e=>{if(!drag)return;const dx=e.clientX-last.x,dy=e.clientY-last.y;dragDistance+=Math.hypot(dx,dy);cam.az+=dx*0.008;cam.el=Math.max(0.18,Math.min(1.15,cam.el+dy*0.005));last={x:e.clientX,y:e.clientY};draw();});
+cv.addEventListener('pointerup',e=>{if(drag && dragDistance<5) selectAt(e.offsetX,e.offsetY); drag=false;});
+cv.addEventListener('pointercancel',()=>drag=false);
+cv.addEventListener('wheel',e=>{e.preventDefault();cam.zoom=Math.max(.55,Math.min(2.2,cam.zoom*(e.deltaY<0?1.08:.92)));draw();},{passive:false});
+function selectAt(x,y){let best=null,dist=1e9; hit.forEach(h=>{const d=Math.hypot(h.x-x,h.y-y); if(d<h.r+7 && d<dist){dist=d;best=h;}}); if(best){selected=best.id;updateDetail();draw();}}
+document.getElementById('leftBtn').onclick=()=>{cam.az-=0.22;draw()};
+document.getElementById('rightBtn').onclick=()=>{cam.az+=0.22;draw()};
+document.getElementById('zinBtn').onclick=()=>{cam.zoom=Math.min(2.2,cam.zoom*1.12);draw()};
+document.getElementById('zoutBtn').onclick=()=>{cam.zoom=Math.max(.55,cam.zoom*.9);draw()};
+document.getElementById('resetBtn').onclick=()=>{cam={az:-0.92,el:0.56,zoom:1.08,tx:0,tz:0,ty:4.5};draw()};
+document.getElementById('signalScenario').addEventListener('change',e=>setScenario(e.target.value));
+document.getElementById('signalToggle').onclick=()=>{signalRunning=!signalRunning;document.getElementById('signalToggle').textContent=signalRunning?'Ⅱ ПАУЗА':'▶ ПРОДОЛЖИТЬ';updateTrafficUI(true);draw();};
+document.getElementById('signalRestart').onclick=()=>{signalPhase=0;signalRunning=true;document.getElementById('signalToggle').textContent='Ⅱ ПАУЗА';updateTrafficUI(true);draw();};
+document.getElementById('signalAll').onclick=()=>{current='all';renderMenu();draw();};
+document.getElementById('signalSpeed').addEventListener('input',e=>{signalMultiplier=+e.target.value;document.getElementById('signalSpeedLabel').textContent=signalMultiplier+'×';});
+resize();updateTrafficUI(true);updateScenarioExplanation();requestAnimationFrame(signalFrame);
+</script>
+</body>
+</html>
